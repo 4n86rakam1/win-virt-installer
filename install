@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# win10: Win10_22H2_English_x64v1.iso
+# win11: Win11_22H2_English_x64v2.iso
+
+check_or_download_iso() {
+    if [[ ! -e iso/virtio-win.iso ]]; then
+        echo "dist/virtio-win.iso was not found so download it."
+        curl \
+            -sL \
+            -o iso/virtio-win.iso \
+             https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
+    fi
+}
+
+create_iso() {
+    TMP=$(mktemp -d)
+
+    mkdir "${TMP}/mnt" "${TMP}/iso"
+
+    sudo mount -o loop,ro iso/Win10_22H2_English_x64v1.iso "${TMP}/mnt"
+    cp -r "${TMP}"/mnt/* "${TMP}/iso/"
+    sudo umount "${TMP}/mnt"
+    cp autounattend.xml "${TMP}/iso/"
+
+    genisoimage \
+        -b boot/etfsboot.com \
+        -no-emul-boot \
+        -boot-load-seg 1984 \
+        -boot-load-size 8 \
+        -iso-level 2 \
+        -J \
+        -l \
+        -D \
+        -N \
+        -input-charset iso8859-1 \
+        -joliet-long \
+        -allow-limited-size \
+        -relaxed-filenames \
+        -quiet \
+        -o output.iso \
+        "${TMP}/iso"
+
+    sudo rm -fr "${TMP}/"
+}
+
+create_vm() {
+    name_prefix="${NAME_PREFIX:-win10}"
+    name_suffix="$(date +%Y-%m-%d-%H%M%S)"
+    vm_name="${name_prefix}-${name_suffix}"
+    vcpus="${VCPUS:-8}"
+    ram_size="${RAM:-12000}"
+    disk_size="${DISK_SIZE:-60}"
+
+    virt-install \
+        --connect qemu:///system \
+        --name "${vm_name}" \
+        --ram "${ram_size}" \
+        --disk "size=${disk_size},format=qcow2" \
+        --vcpus "${vcpus}" \
+        --osinfo name=win10 \
+        --cdrom output.iso \
+        --disk iso/virtio-win.iso,device=cdrom,target.bus=sata
+
+    rm -f output.iso
+    # Detach Windows ISO
+    virsh detach-disk --domain "${vm_name}" --target sdb --config
+
+    # Detach virtio-win.iso
+    virsh detach-disk --domain "${vm_name}" --target sdc --config
+}
+
+check_or_download_iso
+create_iso
+create_vm
