@@ -11,4 +11,5 @@
 
 ## References
 
+- [Answer files (unattend.xml) \| Microsoft Learn](https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/update-windows-settings-and-scripts-create-your-own-answer-file-sxs?view=windows-11)
 - [Automating Windows installation in a VM \| Almost Secure](https://palant.info/2023/02/13/automating-windows-installation-in-a-vm/)
