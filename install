@@ -3,7 +3,16 @@
 # win10: Win10_22H2_English_x64v1.iso
 # win11: Win11_22H2_English_x64v2.iso
 
-check_or_download_iso() {
+win_iso_filename="${WIN_ISO:-Win10_22H2_English_x64v1.iso}"
+
+check_win_iso() {
+    if [[ ! -e "iso/${win_iso_filename}" ]]; then
+        echo "Windows iso file was not found. Download it manually."
+        exit 1
+    fi
+}
+
+check_or_download_virtio_iso() {
     if [[ ! -e iso/virtio-win.iso ]]; then
         echo "dist/virtio-win.iso was not found so download it."
         curl \
@@ -18,7 +27,7 @@ create_iso() {
 
     mkdir "${TMP}/mnt" "${TMP}/iso"
 
-    sudo mount -o loop,ro iso/Win10_22H2_English_x64v1.iso "${TMP}/mnt"
+    sudo mount -o loop,ro "iso/${win_iso_filename}" "${TMP}/mnt"
     cp -r "${TMP}"/mnt/* "${TMP}/iso/"
     sudo umount "${TMP}/mnt"
     cp autounattend.xml "${TMP}/iso/"
@@ -70,6 +79,7 @@ create_vm() {
     virsh detach-disk --domain "${vm_name}" --target sdc --config
 }
 
-check_or_download_iso
+check_win_iso
+check_or_download_virtio_iso
 create_iso
 create_vm
