@@ -32,6 +32,12 @@ create_iso() {
     sudo umount "${TMP}/mnt"
     cp autounattend.xml "${TMP}/iso/"
 
+    # Run shell script when users log on for the first time
+    sudo mkdir -p "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts'
+    cat <<EOF | sudo tee "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts/UserFirstLogon.cmd'
+echo 'hello'
+EOF
+
     genisoimage \
         -b boot/etfsboot.com \
         -no-emul-boot \
