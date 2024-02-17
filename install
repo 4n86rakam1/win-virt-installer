@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2016
 
 # win10: Win10_22H2_English_x64v1.iso
 # win11: Win11_22H2_English_x64v2.iso
@@ -30,13 +31,15 @@ create_iso() {
     sudo mount -o loop,ro "iso/${win_iso_filename}" "${TMP}/mnt"
     cp -r "${TMP}"/mnt/* "${TMP}/iso/"
     sudo umount "${TMP}/mnt"
+
+    chmod +w -R "${TMP}/iso"
+
     cp autounattend.xml "${TMP}/iso/"
 
     # Run shell script when users log on for the first time
-    sudo mkdir -p "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts'
-    cat <<EOF | sudo tee "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts/UserFirstLogon.cmd'
-echo 'hello'
-EOF
+    mkdir -p "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts'
+    cp post.ps1 "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts/'
+    echo "copy C:\Windows\Setup\Scripts\post.ps1 C:\Users\root\Desktop\post.ps1" > "${TMP}"'/iso/sources/$OEM$/$1/Windows/Setup/Scripts/UserFirstLogon.cmd'
 
     genisoimage \
         -b boot/etfsboot.com \
